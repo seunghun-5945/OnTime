@@ -6,8 +6,11 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AddTransportationModal from '../components/transportation/AddTransportationModal';
 import AddToDoModal from '../components/todolist/AddToDoModal';
+import AddMemoModal from '../components/memo/AddMemoModal';
+import AddMemo from '../components/memo/AddMemo';
 import SelectCity from '../screens/SelectCity';
 import SelectStation from '../screens/SelectStation';
+import BusArrival from '../components/transportation/bus/BusArrival';
 
 // 스크린 임포트
 import HomeScreen from '../screens/HomeScreen';
@@ -117,8 +120,23 @@ const RootNavigator = () => {
           options={{headerShown: false}}
         />
         <RootStack.Screen
+          name="BusArrival"
+          component={BusArrival}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
           name="AddToDoModal"
           component={AddToDoModal}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
+          name="AddMemoModal"
+          component={AddMemoModal}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
+          name="AddMemo"
+          component={AddMemo}
           options={{headerShown: false}}
         />
       </RootStack.Navigator>

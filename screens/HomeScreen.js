@@ -5,7 +5,7 @@ import AddItemButton from '../components/AddItemButton';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs'; // 날짜 포맷용 (선택적 설치: yarn add dayjs)
-import {Text} from 'react-native';
+import {Text, View} from 'react-native';
 
 const SafeArea = styled.SafeAreaView`
   flex: 1;
@@ -17,7 +17,6 @@ const Container = styled.ScrollView`
 `;
 
 const SectionBar = styled.View`
-  flex: 1;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
@@ -42,16 +41,37 @@ const TransportationSection = styled.View`
 const WeatherSection = styled.View`
   height: 200px;
   align-items: center;
-  justify-content: center;
 `;
 
 const TodoSection = styled.View`
-  height: 150px;
-  align-items: center;
+  height: 200px;
   justify-content: center;
 `;
 
+const MemoSection = styled.View`
+  height: 200px;
+  align-items: center;
+`;
+
+const MemoBox = styled.TouchableOpacity`
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #f9f9f9;
+  flex-direction: row;
+  align-items: center;
+`;
+
+const MemoContent = styled.View`
+  flex: 1;
+`;
+
 const EditButton = styled.TouchableOpacity`
+  padding: 10px;
+`;
+
+const DeleteButton = styled.TouchableOpacity`
   padding: 10px;
 `;
 
@@ -60,6 +80,8 @@ const HomeScreen = () => {
   const [weatherTInfo, setWeatherInfo] = useState('');
   const [todoInfo, setTodoInfo] = useState('');
   const [todayTodos, setTodayTodos] = useState([]);
+  const [memoList, setMemoList] = useState([]);
+
   const navigation = useNavigation();
 
   // 오늘 날짜 키
@@ -80,12 +102,53 @@ const HomeScreen = () => {
     }
   };
 
+  const fetchMemos = async () => {
+    try {
+      const json = await AsyncStorage.getItem('memoList');
+      if (json) {
+        const parsed = JSON.parse(json);
+        const flattened = Object.values(parsed).flat();
+        flattened.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setMemoList(flattened);
+      } else {
+        setMemoList([]);
+      }
+    } catch (e) {
+      console.error('메모 불러오기 실패:', e);
+    }
+  };
+
   useEffect(() => {
     // 화면이 포커스 될 때마다 할 일 다시 불러오기
     const unsubscribe = navigation.addListener('focus', fetchTodos);
     // 컴포넌트 언마운트 시 이벤트 제거
     return unsubscribe;
   }, [navigation]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', fetchMemos);
+    return unsubscribe;
+  }, [navigation]);
+
+  const deleteMemo = async idToDelete => {
+    try {
+      const json = await AsyncStorage.getItem('memoList');
+      if (!json) return;
+
+      const parsed = JSON.parse(json); // 날짜별로 저장된 메모
+      const updated = Object.fromEntries(
+        Object.entries(parsed).map(([date, memos]) => [
+          date,
+          memos.filter(memo => memo.id !== idToDelete),
+        ]),
+      );
+
+      await AsyncStorage.setItem('memoList', JSON.stringify(updated));
+      fetchMemos(); // UI 업데이트
+    } catch (e) {
+      console.error('메모 삭제 실패:', e);
+    }
+  };
 
   return (
     <SafeArea>
@@ -105,41 +168,70 @@ const HomeScreen = () => {
           <AddItemButton />
         </WeatherSection>
         <Hr />
+        {todayTodos.length > 0 ? (
+          <>
+            <SectionBar>
+              <SectionText>📋 오늘 해야할 일</SectionText>
+              <EditButton onPress={() => navigation.navigate('AddToDoModal')}>
+                <Text style={{color: 'white', fontSize: 25}}>➕</Text>
+              </EditButton>
+            </SectionBar>
+
+            <TodoSection
+              style={{alignItems: 'flex-start', paddingLeft: 10, gap: 10}}>
+              {todayTodos.map((item, idx) => (
+                <Text key={idx} style={{fontSize: 16}}>
+                  ✅ {item}
+                </Text>
+              ))}
+            </TodoSection>
+          </>
+        ) : (
+          <>
+            <SectionBar>
+              <SectionText>📋 오늘 해야할 일</SectionText>
+            </SectionBar>
+            <TodoSection>
+              <AddItemButton
+                onPress={() => navigation.navigate('AddToDoModal')}
+              />
+            </TodoSection>
+          </>
+        )}
+
+        <Hr />
+
         <SectionBar>
-          <SectionText>📋 오늘 해야할 일 </SectionText>
-          {todayTodos.length > 0 ? (
-            <EditButton onPress={() => navigation.navigate('AddToDoModal')}>
-              <Text style={{color: 'white', fontSize: 25}}>➕</Text>
-            </EditButton>
-          ) : (
-            <AddItemButton
-              onPress={() => navigation.navigate('AddToDoModal')}
-            />
-          )}
+          <SectionText>📝 메모</SectionText>
+          <EditButton onPress={() => navigation.navigate('AddMemo')}>
+            <Text>+</Text>
+          </EditButton>
         </SectionBar>
 
-        <TodoSection
-          style={{
-            alignItems: 'left',
-            paddingLeft: 10,
-            gap: 10,
-          }}>
-          {todayTodos.length > 0 ? (
-            todayTodos.map((item, idx) => (
-              <Text key={idx} style={{fontSize: 16}}>
-                ✅ {item}
-              </Text>
-            ))
+        <MemoSection>
+          {memoList.length === 0 ? (
+            <AddItemButton onPress={() => navigation.navigate('AddMemo')} />
           ) : (
-            <AddItemButton
-              onPress={() => {
-                navigation.navigate('AddToDoModal');
-              }}
-            />
+            memoList.slice(0, 3).map(memo => (
+              <MemoBox
+                key={memo.id}
+                onPress={() => navigation.navigate('AddMemo', {memo})}
+                style={{justifyContent: 'space-between'}}>
+                <MemoContent>
+                  <Text style={{fontWeight: 'bold'}}>
+                    {dayjs(memo.createdAt).format('YYYY-MM-DD HH:mm')}
+                  </Text>
+                  <Text numberOfLines={2}>{memo.content}</Text>
+                </MemoContent>
+                <DeleteButton onPress={() => deleteMemo(memo.id)}>
+                  <Text style={{fontSize: 18, color: 'red'}}>🗑️</Text>
+                </DeleteButton>
+              </MemoBox>
+            ))
           )}
-        </TodoSection>
+        </MemoSection>
+
         <Hr />
-        <SectionText>📝 메모</SectionText>
       </Container>
     </SafeArea>
   );
