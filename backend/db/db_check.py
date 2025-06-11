@@ -1,24 +1,41 @@
 import asyncio
 import asyncpg
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 async def check_database():
     try:
+        # 환경변수에서 데이터베이스 정보 가져오기
+        db_host = os.getenv("DB_HOST")
+        db_port = int(os.getenv("DB_PORT", "5432"))
+        db_user = os.getenv("DB_USER")
+        db_password = os.getenv("DB_PASSWORD")
+        db_name = os.getenv("DB_NAME", "postgres")
+        
+        if not all([db_host, db_user, db_password]):
+            raise ValueError("필수 데이터베이스 환경변수가 설정되지 않았습니다.")
+        
+        print("=== 데이터베이스 연결 시도 ===")
+        print(f"Host: {db_host}")
+        print(f"Database: {db_name}")
+        print(f"User: {db_user}")
+        print("=" * 50)
+        
         # 데이터베이스 연결
         conn = await asyncpg.connect(
-            host='cpdb.c1oage4oaeyi.ap-northeast-2.rds.amazonaws.com',
-            port=5432,
-            user='postgres',
-            password='wnghks1278',
-            database='postgres'
+            host=db_host,
+            port=db_port,
+            user=db_user,
+            password=db_password,
+            database=db_name
         )
         
-        print("=== 데이터베이스 연결 정보 ===")
-        print(f"Host: cpdb.c1oage4oaeyi.ap-northeast-2.rds.amazonaws.com")
-        print(f"Database: postgres")
-        print(f"User: postgres")
-        print("연결 성공! ✅")
+        print("✅ 데이터베이스 연결 성공!")
         
-        # 현재 데이터베이스 이름 확인
+        # 현재 연결된 데이터베이스 확인
         current_db = await conn.fetchval("SELECT current_database();")
         print(f"현재 연결된 데이터베이스: {current_db}")
         
@@ -30,9 +47,12 @@ async def check_database():
             ORDER BY table_name;
         """)
         
-        print(f"\n=== 데이터베이스의 모든 테이블 ===")
-        for table in tables:
-            print(f"- {table['table_name']}")
+        print(f"\n=== 데이터베이스의 테이블들 ===")
+        if tables:
+            for table in tables:
+                print(f"- {table['table_name']}")
+        else:
+            print("테이블이 없습니다.")
         
         # users 테이블 확인
         users_exists = await conn.fetchval("""
@@ -45,7 +65,7 @@ async def check_database():
         
         print(f"\n=== users 테이블 상태 ===")
         if users_exists:
-            print("users 테이블 존재: ✅")
+            print("✅ users 테이블 존재")
             
             # users 테이블 구조 확인
             columns = await conn.fetch("""
@@ -72,12 +92,12 @@ async def check_database():
                 print("등록된 사용자가 없습니다.")
                 
         else:
-            print("users 테이블 존재하지 않음: ❌")
+            print("❌ users 테이블이 존재하지 않습니다.")
         
         await conn.close()
         
     except Exception as e:
-        print(f"오류 발생: {e}")
+        print(f"❌ 오류 발생: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(check_database()) 
+    asyncio.run(check_database())

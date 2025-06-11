@@ -1,20 +1,35 @@
 import asyncio
 import asyncpg
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 async def check_cp_database():
     try:
+        # 환경변수에서 데이터베이스 정보 가져오기
+        db_host = os.getenv("DB_HOST")
+        db_port = int(os.getenv("DB_PORT", "5432"))
+        db_user = os.getenv("DB_USER")
+        db_password = os.getenv("DB_PASSWORD")
+        db_name = os.getenv("DB_NAME", "cp")
+        
+        if not all([db_host, db_user, db_password]):
+            raise ValueError("필수 데이터베이스 환경변수가 설정되지 않았습니다.")
+        
         print("=== CP 데이터베이스 연결 시도 ===")
-        print(f"Host: cpdb.c1oage4oaeyi.ap-northeast-2.rds.amazonaws.com")
-        print(f"Database: cp")
+        print(f"Host: {db_host}")
+        print(f"Database: {db_name}")
         print("=" * 50)
         
         # cp 데이터베이스에 연결
         conn = await asyncpg.connect(
-            host='cpdb.c1oage4oaeyi.ap-northeast-2.rds.amazonaws.com',
-            port=5432,
-            user='postgres',
-            password='wnghks1278',
-            database='cp'  # 여기가 중요!
+            host=db_host,
+            port=db_port,
+            user=db_user,
+            password=db_password,
+            database=db_name
         )
         
         print("✅ CP 데이터베이스 연결 성공!")
@@ -84,4 +99,4 @@ async def check_cp_database():
         print(f"❌ 오류 발생: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(check_cp_database()) 
+    asyncio.run(check_cp_database())
