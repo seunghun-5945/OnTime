@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from backend.config.config import settings
+from config.config import settings
 
 # 비동기 데이터베이스 엔진 생성 (asyncpg 사용)
 # postgresql:// 를 postgresql+asyncpg:// 로 변경
@@ -33,4 +33,4 @@ class User(Base):
 # 비동기 데이터베이스 세션 의존성
 async def get_db():
     async with AsyncSessionLocal() as session:
-        yield session 
+        yield session

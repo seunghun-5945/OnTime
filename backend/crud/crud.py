@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from backend.db.database import User
-from backend.utils.auth_utils import get_password_hash, verify_password
-from backend.schemas.schemas import RegisterRequest
+from db.database import User
+from utils.auth_utils import get_password_hash, verify_password
+from schemas.schemas import RegisterRequest
 
 async def get_user_by_username(db: AsyncSession, username: str):
     """사용자명으로 사용자 조회"""
@@ -34,4 +34,4 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
         return False
     if not verify_password(password, user.password_hash):
         return False
-    return user 
+    return user

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers.auth import router as auth_router
-from backend.db.database import engine, Base
+from routers.auth import router as auth_router
+from db.database import engine, Base
 import asyncio
 
 # FastAPI 앱 생성
@@ -35,4 +35,4 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"} 
+    return {"status": "healthy"}

@@ -3,11 +3,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
-from backend.db.database import get_db
-from backend.schemas.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
-from backend.crud.crud import authenticate_user, create_user, get_user_by_username, get_user_by_email
-from backend.utils.auth_utils import create_access_token, verify_token
-from backend.config.config import settings
+from db.database import get_db
+from schemas.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from crud.crud import authenticate_user, create_user, get_user_by_username, get_user_by_email
+from utils.auth_utils import create_access_token, verify_token
+from config.config import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -75,4 +75,4 @@ async def read_users_me(current_user: UserResponse = Depends(get_current_user)):
 @router.post("/logout")
 async def logout():
     """로그아웃 (클라이언트에서 토큰 삭제)"""
-    return {"message": "로그아웃되었습니다"} 
+    return {"message": "로그아웃되었습니다"}
