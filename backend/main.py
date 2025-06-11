@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers.auth import router as auth_router
-from database import engine, Base
+from backend.routers.auth import router as auth_router
+from backend.db.database import engine, Base
 import asyncio
 
 # FastAPI 앱 생성

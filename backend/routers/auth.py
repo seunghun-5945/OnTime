@@ -3,11 +3,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
-from database import get_db
-from schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
-from crud import authenticate_user, create_user, get_user_by_username, get_user_by_email
-from auth_utils import create_access_token, verify_token
-from config import settings
+from backend.db.database import get_db
+from backend.schemas.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from backend.crud.crud import authenticate_user, create_user, get_user_by_username, get_user_by_email
+from backend.utils.auth_utils import create_access_token, verify_token
+from backend.config.config import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 

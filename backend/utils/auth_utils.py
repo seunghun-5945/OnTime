@@ -3,8 +3,8 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
-from config import settings
-from schemas import TokenData
+from backend.config.config import settings
+from backend.schemas.schemas import TokenData
 
 # 비밀번호 해싱 컨텍스트
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
