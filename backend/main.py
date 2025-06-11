@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers.auth import router as auth_router
+from routers.todos import router as todos_router
+from routers.notes import router as notes_router
 from db.database import engine, Base
 import asyncio
 import uvicorn
@@ -28,6 +30,8 @@ async def create_tables():
 
 # 라우터 등록
 app.include_router(auth_router)
+app.include_router(todos_router)
+app.include_router(notes_router)
 
 @app.get("/")
 async def root():
