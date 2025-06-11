@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.auth import router as auth_router
 from db.database import engine, Base
 import asyncio
-
+import uvicorn
 # FastAPI 앱 생성
 app = FastAPI(
     title="OnTime 인증 API",
@@ -36,3 +36,14 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+# 직접 실행할 때 서버 시작
+if __name__ == "__main__":
+    print("🚀 OnTime 인증 API 서버를 시작합니다...")
+    print("📍 서버 주소: http://127.0.0.1:8000")
+    print("📚 API 문서: http://127.0.0.1:8000/docs")
+    print("🔄 자동 리로드가 활성화되었습니다.")
+    print("⏹️  서버를 중지하려면 Ctrl+C를 누르세요.")
+    print("-" * 50)
+    
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True, log_level="info")
