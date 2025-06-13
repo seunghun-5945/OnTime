@@ -11,6 +11,11 @@ import AddMemo from '../components/memo/AddMemo';
 import SelectCity from '../screens/SelectCity';
 import SelectStation from '../screens/SelectStation';
 import BusArrival from '../components/transportation/bus/BusArrival';
+import WeatherForecast from '../screens/WeatherForecast';
+import WeatherApp from '../components/weather/Weather';
+import SignUp from '../components/register/SignUp';
+import SignIn from '../components/register/SignIn';
+import DataPage from '../components/data/DataPage';
 
 // 스크린 임포트
 import HomeScreen from '../screens/HomeScreen';
@@ -32,11 +37,11 @@ const BottomTabNavigator = () => {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'Search':
-              iconName = focused ? 'search' : 'search-outline';
+            case 'SignIn':
+              iconName = focused ? 'lock-closed' : 'lock-closed-outline';
               break;
-            case 'Upload':
-              iconName = focused ? 'add-circle' : 'add-circle-outline';
+            case 'Setting':
+              iconName = focused ? 'settings' : 'settings-outline';
               break;
             case 'Reels':
               iconName = focused ? 'play-circle' : 'play-circle-outline';
@@ -60,9 +65,14 @@ const BottomTabNavigator = () => {
         options={{title: '홈'}}
       />
       <RootTab.Screen
-        name="Setting"
-        component={SettingScreen}
-        options={{title: '설정'}}
+        name="SignIn"
+        component={SignIn}
+        options={{title: '로그인'}}
+      />
+      <RootTab.Screen
+        name="DataPage"
+        component={DataPage}
+        options={{title: '데이터 관리'}}
       />
     </RootTab.Navigator>
   );
@@ -85,14 +95,12 @@ const RootNavigator = () => {
           component={BottomTabNavigator}
           options={{headerShown: false}}
         />
-
         {/* 로그인 화면
         <RootStack.Screen
           name="Login"
           component={LoginScreen}
           options={{headerShown: false}}
         /> */}
-
         {/* 게시물 상세 화면 등 추가 가능
         <RootStack.Screen
           name="PostDetail"
@@ -103,7 +111,6 @@ const RootNavigator = () => {
             
           })}
         /> */}
-
         <RootStack.Screen
           name="AddTransportationModal"
           component={AddTransportationModal}
@@ -137,6 +144,21 @@ const RootNavigator = () => {
         <RootStack.Screen
           name="AddMemo"
           component={AddMemo}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
+          name="WeatherForecast"
+          component={WeatherForecast}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
+          name="WeatherApp"
+          component={WeatherApp}
+          options={{headerShown: false}}
+        />
+        <RootStack.Screen
+          name="SignUp"
+          component={SignUp}
           options={{headerShown: false}}
         />
       </RootStack.Navigator>

@@ -122,7 +122,8 @@ const SelectCity = () => {
 
   // 1. 도시 선택 화면
   if (cityData && cityData.response?.body?.items?.item) {
-    const cities = cityData.response.body.items.item || [];
+    const rawCities = cityData.response.body.items.item || [];
+    const cities = Array.isArray(rawCities) ? rawCities : [rawCities];
 
     // 검색어로 도시 필터링
     const filteredCities =

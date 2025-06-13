@@ -5,7 +5,7 @@ import AddItemButton from '../components/AddItemButton';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs'; // 날짜 포맷용 (선택적 설치: yarn add dayjs)
-import {Text, View} from 'react-native';
+import {Text, TouchableOpacity, View} from 'react-native';
 
 const SafeArea = styled.SafeAreaView`
   flex: 1;
@@ -33,14 +33,15 @@ const Hr = styled.View`
 `;
 
 const TransportationSection = styled.View`
-  height: 150px;
-  align-items: center;
+  height: auto;
+  min-height: 200px;
   justify-content: center;
 `;
 
 const WeatherSection = styled.View`
   height: 200px;
   align-items: center;
+  justify-content: center;
 `;
 
 const TodoSection = styled.View`
@@ -49,7 +50,8 @@ const TodoSection = styled.View`
 `;
 
 const MemoSection = styled.View`
-  height: 200px;
+  min-height: 200px;
+  height: 300px;
   align-items: center;
 `;
 
@@ -81,6 +83,7 @@ const HomeScreen = () => {
   const [todoInfo, setTodoInfo] = useState('');
   const [todayTodos, setTodayTodos] = useState([]);
   const [memoList, setMemoList] = useState([]);
+  const [savedBuses, setSavedBuses] = useState([]);
 
   const navigation = useNavigation();
 
@@ -119,6 +122,21 @@ const HomeScreen = () => {
   };
 
   useEffect(() => {
+    const fetchSavedBuses = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('savedBuses');
+        const parsed = stored ? JSON.parse(stored) : [];
+        setSavedBuses(parsed);
+      } catch (e) {
+        console.error('저장된 버스 불러오기 오류:', e);
+        setSavedBuses([]); // 오류가 나도 안전하게 처리
+      }
+    };
+
+    fetchSavedBuses();
+  }, []);
+
+  useEffect(() => {
     // 화면이 포커스 될 때마다 할 일 다시 불러오기
     const unsubscribe = navigation.addListener('focus', fetchTodos);
     // 컴포넌트 언마운트 시 이벤트 제거
@@ -153,19 +171,42 @@ const HomeScreen = () => {
   return (
     <SafeArea>
       <Container>
-        <SectionText>🚏 대중교통 도착 정보</SectionText>
-        <TransportationSection>
-          <AddItemButton
+        <SectionBar>
+          <SectionText>🚏 대중교통 도착 정보</SectionText>
+          <TouchableOpacity
             onPress={() => {
-              console.log('Button pressed'); // 콘솔 로그 추가
+              console.log('Button pressed');
               navigation.navigate('AddTransportationModal');
-            }}
-          />
+            }}>
+            <Text>➕</Text>
+          </TouchableOpacity>
+        </SectionBar>
+        <TransportationSection>
+          {savedBuses.length > 0 ? (
+            savedBuses.map((bus, idx) => (
+              <View key={idx} style={{paddingVertical: 5}}>
+                <Text style={{fontSize: 16}}>🚌 {bus.routeno}번</Text>
+                <Text>정류소명: {bus.stationName}</Text>
+                <Text>남은 시간: {Math.floor(bus.predictTime / 60)}분</Text>
+                <Text>남은 정류장 수: {bus.remainingStops}개</Text>
+              </View>
+            ))
+          ) : (
+            <AddItemButton
+              onPress={() => {
+                console.log('Button pressed');
+                navigation.navigate('AddTransportationModal');
+              }}
+            />
+          )}
         </TransportationSection>
+
         <Hr />
         <SectionText>🌦️ 오늘의 날씨</SectionText>
         <WeatherSection>
-          <AddItemButton />
+          <AddItemButton
+            onPress={() => navigation.navigate('WeatherForecast')}
+          />
         </WeatherSection>
         <Hr />
         {todayTodos.length > 0 ? (
@@ -204,7 +245,7 @@ const HomeScreen = () => {
         <SectionBar>
           <SectionText>📝 메모</SectionText>
           <EditButton onPress={() => navigation.navigate('AddMemo')}>
-            <Text>+</Text>
+            <Text>➕</Text>
           </EditButton>
         </SectionBar>
 
@@ -230,8 +271,6 @@ const HomeScreen = () => {
             ))
           )}
         </MemoSection>
-
-        <Hr />
       </Container>
     </SafeArea>
   );
