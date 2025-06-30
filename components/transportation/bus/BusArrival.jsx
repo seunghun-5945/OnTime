@@ -193,11 +193,25 @@ const BusArrival = ({route}) => {
           try {
             const existing = await AsyncStorage.getItem('savedBuses');
             const parsed = existing ? JSON.parse(existing) : [];
+
             const alreadyExists = parsed.some(
               item => item.routeid === busInfo.routeid,
             );
             if (!alreadyExists) {
-              const updated = [...parsed, busInfo];
+              // 첫 번째 도착 정보만 저장
+              const arrival = busInfo.arrivalInfo?.[0];
+
+              const busToSave = {
+                routeid: busInfo.routeid,
+                routeno: busInfo.routeno,
+                stationName: nodeName || '정류장',
+                predictTime: arrival?.arrtime || 0,
+                remainingStops: arrival?.arrprevstationcnt || 0,
+                citycode: cityCode, // ✅ 추가
+                nodeid: nodeId, // ✅ 추가
+              };
+
+              const updated = [...parsed, busToSave];
               await AsyncStorage.setItem('savedBuses', JSON.stringify(updated));
               Alert.alert('추가 완료', '홈에 노선이 추가되었습니다.');
             } else {

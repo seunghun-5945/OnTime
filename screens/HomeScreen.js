@@ -20,6 +20,7 @@ const SectionBar = styled.View`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  padding: 10px;
 `;
 
 const SectionText = styled.Text`
@@ -33,8 +34,7 @@ const Hr = styled.View`
 `;
 
 const TransportationSection = styled.View`
-  height: auto;
-  min-height: 200px;
+  align-items: cemter;
   justify-content: center;
 `;
 
@@ -77,6 +77,34 @@ const DeleteButton = styled.TouchableOpacity`
   padding: 10px;
 `;
 
+// ✅ 버스 도착 정보 조회 함수
+const fetchArrivalInfo = async (cityCode, nodeId, routeId) => {
+  try {
+    const serviceKey =
+      'RKIYsmDDY6qFhbQnqjZ34tezXfFMp8j8lzQdRUGkm6Ydhe%2BsxopdX5kmtMxKeuHr2U%2F0dvbgReF%2B9Dgbm20t1Q%3D%3D';
+    const url = `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${serviceKey}&cityCode=${cityCode}&nodeId=${nodeId}&routeId=${routeId}&_type=json`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const items = json.response?.body?.items?.item;
+
+    if (!items) return null;
+
+    const arrival = Array.isArray(items)
+      ? items.find(item => item.routeid === routeId)
+      : items?.routeid === routeId
+      ? items
+      : null;
+
+    return {
+      predictTime: arrival?.arrtime || 0,
+      remainingStops: arrival?.arrprevstationcnt || 0,
+    };
+  } catch (e) {
+    console.error('🚍 도착 정보 조회 오류:', e);
+    return null;
+  }
+};
+
 const HomeScreen = () => {
   const [transportationInfo, setTransportationInfo] = useState('');
   const [weatherTInfo, setWeatherInfo] = useState('');
@@ -89,6 +117,73 @@ const HomeScreen = () => {
 
   // 오늘 날짜 키
   const today = dayjs().format('YYYY-MM-DD');
+
+  useEffect(() => {
+    console.log('🧾 저장된 버스:', savedBuses);
+  }, [savedBuses]);
+
+  // 저장된 버스 가져오기
+  const fetchSavedBuses = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('savedBuses');
+      setSavedBuses(stored ? JSON.parse(stored) : []);
+    } catch (e) {
+      console.error('📦 저장된 버스 로드 오류:', e);
+    }
+  };
+
+  // 정기적으로 도착 정보 갱신
+  const refreshSavedBuses = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('savedBuses');
+      const buses = stored ? JSON.parse(stored) : [];
+
+      const updated = await Promise.all(
+        buses.map(async bus => {
+          const arrival = await fetchArrivalInfo(
+            bus.citycode,
+            bus.nodeid,
+            bus.routeid,
+          );
+
+          return {
+            ...bus, // stationName 포함됨
+            predictTime: arrival?.predictTime ?? 0,
+            remainingStops: arrival?.remainingStops ?? 0,
+          };
+        }),
+      );
+
+      setSavedBuses(updated);
+      await AsyncStorage.setItem('savedBuses', JSON.stringify(updated));
+    } catch (e) {
+      console.error('🔄 버스 도착 정보 갱신 실패:', e);
+    }
+  };
+
+  // 포커스 시 데이터 로드 및 갱신
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchSavedBuses();
+      refreshSavedBuses();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  // 30초마다 자동 갱신 설정
+  useEffect(() => {
+    const timer = setInterval(refreshSavedBuses, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 삭제 기능
+  const deleteBus = async routeid => {
+    const stored = await AsyncStorage.getItem('savedBuses');
+    if (!stored) return;
+    const filtered = JSON.parse(stored).filter(b => b.routeid !== routeid);
+    await AsyncStorage.setItem('savedBuses', JSON.stringify(filtered));
+    setSavedBuses(filtered);
+  };
 
   // 할 일 불러오기
   const fetchTodos = async () => {
@@ -129,12 +224,15 @@ const HomeScreen = () => {
         setSavedBuses(parsed);
       } catch (e) {
         console.error('저장된 버스 불러오기 오류:', e);
-        setSavedBuses([]); // 오류가 나도 안전하게 처리
+        setSavedBuses([]);
       }
     };
 
-    fetchSavedBuses();
-  }, []);
+    // 화면이 포커스될 때마다 실행되도록
+    const unsubscribe = navigation.addListener('focus', fetchSavedBuses);
+
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     // 화면이 포커스 될 때마다 할 일 다시 불러오기
@@ -174,32 +272,40 @@ const HomeScreen = () => {
         <SectionBar>
           <SectionText>🚏 대중교통 도착 정보</SectionText>
           <TouchableOpacity
-            onPress={() => {
-              console.log('Button pressed');
-              navigation.navigate('AddTransportationModal');
-            }}>
+            onPress={() => navigation.navigate('AddTransportationModal')}>
             <Text>➕</Text>
           </TouchableOpacity>
         </SectionBar>
-        <TransportationSection>
-          {savedBuses.length > 0 ? (
-            savedBuses.map((bus, idx) => (
-              <View key={idx} style={{paddingVertical: 5}}>
-                <Text style={{fontSize: 16}}>🚌 {bus.routeno}번</Text>
-                <Text>정류소명: {bus.stationName}</Text>
-                <Text>남은 시간: {Math.floor(bus.predictTime / 60)}분</Text>
-                <Text>남은 정류장 수: {bus.remainingStops}개</Text>
-              </View>
-            ))
-          ) : (
+
+        {savedBuses.length === 0 ? (
+          <TransportationSection style={{maxHeight: 200}}>
             <AddItemButton
-              onPress={() => {
-                console.log('Button pressed');
-                navigation.navigate('AddTransportationModal');
-              }}
+              onPress={() => navigation.navigate('AddTransportationModal')}
             />
-          )}
-        </TransportationSection>
+          </TransportationSection>
+        ) : (
+          <TransportationSection>
+            {savedBuses.map(bus => (
+              <View
+                key={bus.routeid}
+                style={{
+                  marginBottom: 12,
+                  backgroundColor: '#fff',
+                  padding: 14,
+                  borderRadius: 8,
+                  elevation: 1,
+                }}>
+                <Text style={{fontSize: 18}}>🚌 {bus.routeno}번</Text>
+                <Text>정류장: {bus.stationName || '알 수 없음'}</Text>
+                <Text>남은 시간: {Math.floor(bus.predictTime / 60)}분</Text>
+                <Text>남은 정류장: {bus.remainingStops}개</Text>
+                <DeleteButton onPress={() => deleteBus(bus.routeid)}>
+                  <Text style={{fontSize: 16, color: '#d32f2f'}}>🗑️ 삭제</Text>
+                </DeleteButton>
+              </View>
+            ))}
+          </TransportationSection>
+        )}
 
         <Hr />
         <SectionText>🌦️ 오늘의 날씨</SectionText>
@@ -214,7 +320,7 @@ const HomeScreen = () => {
             <SectionBar>
               <SectionText>📋 오늘 해야할 일</SectionText>
               <EditButton onPress={() => navigation.navigate('AddToDoModal')}>
-                <Text style={{color: 'white', fontSize: 25}}>➕</Text>
+                <Text style={{color: 'white'}}>➕</Text>
               </EditButton>
             </SectionBar>
 

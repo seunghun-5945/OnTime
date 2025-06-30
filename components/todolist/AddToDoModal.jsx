@@ -1,22 +1,72 @@
 import React, {useState, useEffect} from 'react';
 import {
-  View,
-  TextInput,
-  Button,
   FlatList,
   Text,
-  StyleSheet,
+  TextInput,
+  Button,
   TouchableOpacity,
 } from 'react-native';
 import {Calendar} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import styled from 'styled-components/native';
+
+const Container = styled.SafeAreaView`
+  flex: 1;
+  background-color: white;
+`;
+
+const CalendarWrapper = styled.View`
+  flex: 1;
+`;
+
+const Content = styled.View`
+  flex: 1;
+  padding: 16px;
+`;
+
+const Input = styled.TextInput`
+  border-width: 1px;
+  border-color: #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+`;
+
+const TodoRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  margin-vertical: 4px;
+`;
+
+const TodoText = styled.Text`
+  font-size: 16px;
+  flex: 1;
+`;
+
+const EditInput = styled.TextInput`
+  border-width: 1px;
+  border-color: gray;
+  padding: 6px;
+  border-radius: 4px;
+  flex: 1;
+`;
+
+const EditButton = styled.TouchableOpacity`
+  margin-horizontal: 8px;
+`;
+
+const DeleteButton = styled.TouchableOpacity``;
+
+const TodoListWrapper = styled.FlatList`
+  margin-top: 12px;
+  padding: 8px;
+  border-radius: 8px;
+`;
 
 const AddToDoModal = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [todoText, setTodoText] = useState('');
   const [todoList, setTodoList] = useState({});
-
-  // 편집 중인 아이템 인덱스와 텍스트 상태 추가
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingText, setEditingText] = useState('');
 
@@ -34,7 +84,6 @@ const AddToDoModal = () => {
     loadTodos();
   }, []);
 
-  // 저장 함수 공통화
   const saveTodoList = async updated => {
     try {
       await AsyncStorage.setItem('todoList', JSON.stringify(updated));
@@ -55,7 +104,6 @@ const AddToDoModal = () => {
     setTodoText('');
   };
 
-  // Todo 삭제
   const handleDeleteTodo = async index => {
     const updated = {...todoList};
     if (!updated[selectedDate]) return;
@@ -63,18 +111,13 @@ const AddToDoModal = () => {
     updated[selectedDate].splice(index, 1);
     setTodoList(updated);
     await saveTodoList(updated);
-
-    // 만약 삭제 후 리스트가 비면 selectedDate 초기화 가능 (선택사항)
-    // if (updated[selectedDate].length === 0) setSelectedDate('');
   };
 
-  // Todo 편집 시작
   const startEditing = (index, text) => {
     setEditingIndex(index);
     setEditingText(text);
   };
 
-  // 편집 내용 저장
   const saveEditing = async () => {
     if (editingIndex === null || editingText.trim() === '') return;
 
@@ -99,33 +142,31 @@ const AddToDoModal = () => {
   });
 
   return (
-    <View style={{flex: 1, backgroundColor: 'white'}}>
-      <View style={{flex: 1}}>
+    <Container>
+      <CalendarWrapper>
         <Calendar
           onDayPress={day => setSelectedDate(day.dateString)}
           markedDates={markedDates}
         />
-      </View>
+      </CalendarWrapper>
 
-      <View style={{flex: 1, padding: 16}}>
-        <TextInput
+      <Content>
+        <Input
           placeholder="할 일을 입력하세요"
           value={todoText}
           onChangeText={setTodoText}
-          style={styles.input}
         />
         <Button title="추가하기" onPress={handleAddTodo} />
 
         {selectedDate && todoList[selectedDate]?.length > 0 && (
-          <FlatList
+          <TodoListWrapper
             data={todoList[selectedDate]}
             keyExtractor={(item, index) => `${item}-${index}`}
             renderItem={({item, index}) => (
-              <View style={styles.todoRow}>
+              <TodoRow>
                 {editingIndex === index ? (
                   <>
-                    <TextInput
-                      style={[styles.todoItem, styles.editInput]}
+                    <EditInput
                       value={editingText}
                       onChangeText={setEditingText}
                       autoFocus
@@ -139,62 +180,22 @@ const AddToDoModal = () => {
                   </>
                 ) : (
                   <>
-                    <Text style={styles.todoItem}>• {item}</Text>
-                    <TouchableOpacity
-                      onPress={() => startEditing(index, item)}
-                      style={styles.editButton}>
-                      <Text style={{color: 'blue'}}>수정</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleDeleteTodo(index)}
-                      style={styles.deleteButton}>
+                    <TodoText>• {item}</TodoText>
+                    <EditButton onPress={() => startEditing(index, item)}>
+                      <Text>수정</Text>
+                    </EditButton>
+                    <DeleteButton onPress={() => handleDeleteTodo(index)}>
                       <Text style={{color: 'red'}}>삭제</Text>
-                    </TouchableOpacity>
+                    </DeleteButton>
                   </>
                 )}
-              </View>
+              </TodoRow>
             )}
-            style={{
-              marginTop: 12,
-              borderWidth: 1,
-              borderColor: 'red',
-              padding: 8,
-              borderRadius: 8,
-            }}
           />
         )}
-      </View>
-    </View>
+      </Content>
+    </Container>
   );
 };
-
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  todoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  todoItem: {
-    fontSize: 16,
-    flex: 1,
-  },
-  editInput: {
-    borderWidth: 1,
-    borderColor: 'gray',
-    padding: 6,
-    borderRadius: 4,
-  },
-  editButton: {
-    marginHorizontal: 8,
-  },
-  deleteButton: {},
-});
 
 export default AddToDoModal;
